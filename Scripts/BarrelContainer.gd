@@ -1,13 +1,13 @@
 extends ScrollContainer
 
-const OBJECTSCENE = preload("res://Scenes/object.tscn")
+const OBJECTSCENE = preload("res://Scenes/Objects/item.tscn")
 var hovering = false
 
 
 			
 func _input(event):
 	
-	if hovering && GameManager.get_held_object() != null: #Drop item back to previous slot
+	if hovering && GameManager.get_held_object() != null && GameManager.last_container != "Backpack": #Drop item back to previous slot
 		if event.is_action_released("pickup"):
 			var slot = GameManager.get_pulled_location()
 			var char_slot = GameManager.get_pulled_char_location()

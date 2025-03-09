@@ -15,6 +15,8 @@ extends Control
 @onready var confirm_button = $"CreateAccountScreen/ConfirmButton"
 @onready var back_button = $"CreateAccountScreen/BackButton"
 
+@onready var character_selection = $"../Character Selection"
+
 var default_scale = 0.5
 
 func _on_login_button_pressed():

@@ -9,7 +9,7 @@ var bottom_being_pushed = false
 var speed = 3500
 var scale_shrink = 0.4
 var scale_default = 0.5
-const OBJECTSCENE = preload("res://Scenes/object.tscn")
+const OBJECTSCENE = preload("res://Scenes/Objects/item.tscn")
 var hovering = false
 var max_scroll = 0
 

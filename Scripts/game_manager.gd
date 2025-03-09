@@ -2,9 +2,11 @@ extends Node
 
 
 @onready var texture_rect = $"../OmegaScene/Map/CanvasLayer/Mouse_Held_Item/TextureRect"
+@onready var daynight_image = $"../OmegaScene/Map/CanvasLayer/Status Bars/NinePatchRect9/DayNight/AnimatedSprite2D"
 
 
-const MAP = preload("res://Scenes/Map.tscn")
+const MAP = preload("res://Scenes/Maps/Map.tscn")
+const OBJECTSCENE = preload("res://Scenes/Objects/item.tscn")
 
 var score = 0
 var holding = false
@@ -12,6 +14,7 @@ var holding_last_frame = false
 var last_texture = null
 var held_object = null
 var ground_object = null
+var hovered_object = null
 var last_pulled_from = null #bag slot
 var last_pulled_from_char = null #character window slot
 var hovering_slot = false
@@ -20,13 +23,25 @@ var hovering_window = false
 var button_pressed = false
 var item_hovered = false
 var swapped = null
-var mouse_regular = preload("res://Assets/sprites/UI/Mouse Cursor/MouseCursor.png")
-var mouse_clicked = preload("res://Assets/sprites/UI/Mouse Cursor/MouseCursor2.png")
+var target = null
+var logged_in = false
+var last_container = ""
+var tod = 0
+var mouse_over_count = 0
+var mouse_regular = preload("res://Assets/sprites/UI/Mouse Cursor/DefaultCursor.png")
+var mouse_clicked = preload("res://Assets/sprites/UI/Mouse Cursor/GrabCursor.png")
 const ATTACK_CURSOR = preload("res://Assets/sprites/UI/Mouse Cursor/AttackCursor.png")
-
+var clone = {}
+var bag_tooltip
+var character_slot = 0
+var characters = {}
+var selected_character
 
 #@onready var score_label = %ScoreLabel
 
+func _ready():
+	pass
+	
 func _process(_delta):
 	if holding_last_frame:
 		if !holding:
@@ -43,7 +58,12 @@ func _process(_delta):
 	else:
 		holding_last_frame = false
 		
-
+	if !item_hovered:
+		hovered_object = null
+		
+	if !item_hovered:
+		bag_tooltip.visible = false
+		
 func _input(event):
 		
 		
@@ -59,7 +79,56 @@ func _input(event):
 	if event is InputEventMouseMotion:
 		if(holding):
 			set_held_position(event.position - holdOffset)
-			
+
+func set_target(enemy):
+	target = enemy
+	
+func get_target():
+	return target
+
+func save_clone(item):
+	for key in item:
+		clone[key] = item[key]
+	save_cloned_item(item)
+	
+func delete_clone():
+	clone = {}
+
+func get_clone():
+	return clone
+
+func save_cloned_item(item):
+	if last_pulled_from != null:
+		held_object.queue_free()
+		last_pulled_from.cloned_item = OBJECTSCENE.instantiate()
+		if item["item_type"] != 6:
+			last_pulled_from.cloned_item.visible = item["visible"]
+			last_pulled_from.cloned_item.set_item_type(item["item_type"])
+			last_pulled_from.cloned_item.set_armor_type(item["armor_type"])
+			last_pulled_from.cloned_item.set_resource_path(item["path"])
+			last_pulled_from.cloned_item.set_attack_path(item["attack_path"])
+			last_pulled_from.cloned_item.set_dummy_path(item["dummy_path"]) 
+			last_pulled_from.cloned_item.dummy_image = item["dummy_sprite"]
+			last_pulled_from.cloned_item.object_animations = item["frames"]	
+			last_pulled_from.cloned_item.attack_animations = item["attack_frames"]
+		
+		else: #stackable
+			last_pulled_from.cloned_item.stack_size = item["stack_size"]
+			last_pulled_from.get_node("item_sprite/Label").text = str(item["stack_size"])
+			last_pulled_from.get_node("item_sprite/Label").visible = true
+		last_pulled_from.cloned_item.tag = item["tag"]
+		
+func add_clone():
+	if last_pulled_from != null:
+		last_pulled_from.add_child(last_pulled_from.cloned_item)
+	
+func clear():
+	set_texture(null)
+	set_held_object(null)
+	set_pulled_location(null)
+	set_pulled_char_location(null)
+	
+				
 func get_texture():
 	return texture_rect.texture
 
@@ -161,3 +230,11 @@ func place_swapped():
 	var swap = swapped
 	swapped = null
 	return swap
+
+func set_tod(tod_index):
+	tod = tod_index
+	daynight_image.set_frame_and_progress(tod,0)
+	print("tod: " + str(tod))
+	
+func set_bag_tooltip(tooltip):
+	bag_tooltip = tooltip

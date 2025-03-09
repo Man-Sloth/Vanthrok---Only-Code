@@ -17,7 +17,7 @@ var moving_start = Vector2(0,0)
 var backpack_start = Vector2(0,0)
 var hovering = false
 var inventory_hover = false
-const OBJECTSCENE = preload("res://Scenes/object.tscn")
+const OBJECTSCENE = preload("res://Scenes/Objects/item.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -58,7 +58,7 @@ func _input(event):
 				GameManager.set_held_object(null)
 				GameManager.set_pulled_char_location(null)
 				GameManager.set_holding(false)
-	elif !hovering && !GameManager.get_hovering_slot(): #Drop item out of bag
+	elif !hovering && !GameManager.get_hovering_slot() && GameManager.last_container == "Bank": #Drop item out of bag
 		if event.is_action_released("pickup"):
 			var slot = GameManager.get_pulled_location()
 			if slot != null:
@@ -162,7 +162,6 @@ func _on_scroll_container_mouse_entered():
 func _on_scroll_container_mouse_exited():
 	inventory_hover = false
 
-
 func _on_nine_patch_rect_2_mouse_entered():
 	hovering = true
 	GameManager.set_hovering_window(true)
@@ -170,7 +169,5 @@ func _on_nine_patch_rect_2_mouse_entered():
 func _on_nine_patch_rect_2_mouse_exited():
 	hovering = false
 	GameManager.set_hovering_window(false)
-
-
 
 

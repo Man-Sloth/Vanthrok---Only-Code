@@ -1,7 +1,9 @@
 extends Node2D
 
-const PLAYER_SPAWN = preload("res://Scenes/PlayerTemplate.tscn")
-const ENEMY_SPAWN = preload("res://Scenes/Enemy.tscn")
+const PLAYER_SPAWN = preload("res://Scenes/Characters/PlayerTemplate.tscn")
+const SKELETON = preload("res://Scenes/Characters/Skeleton.tscn")
+const RABBIT = preload("res://Scenes/Characters/Rabbit.tscn")
+
 var last_world_state = 0
 var world_state_buffer = []
 var interpolation_offset = 100
@@ -19,7 +21,8 @@ func SpawnNewPlayer(player_id, spawn_position):
 func DespawnPlayer(player_id):
 	# TO-DO 5-10 second timer for logging off player
 	await get_tree().create_timer(0.2).timeout # For crashed players
-	get_node("OtherPlayers/" + str(player_id)).queue_free()
+	if get_node("OtherPlayers/" + str(player_id)) != null:
+		get_node("OtherPlayers/" + str(player_id)).queue_free()
 
 func UpdateWorldState_old(world_state):
 	# Buffer
@@ -64,7 +67,8 @@ func _physics_process(_delta):
 					var new_position = lerp(world_state_buffer[1][player]["P"], world_state_buffer[2][player]["P"], interpolation_factor)
 					var facing = world_state_buffer[2][player]["A"]
 					var mode = world_state_buffer[2][player]["M"]
-					get_node("OtherPlayers/" + str(player)).MovePlayer(new_position, facing, mode)
+					var equipment = world_state_buffer[2][player]["Q"]
+					get_node("OtherPlayers/" + str(player)).MovePlayer(new_position, facing, mode, equipment)
 				else:
 					print("spawning player")
 					SpawnNewPlayer(player, world_state_buffer[2][player]["P"])
@@ -72,9 +76,11 @@ func _physics_process(_delta):
 				if not world_state_buffer[1]["Enemies"].has(enemy):
 					continue
 				if get_node("Enemies").has_node(str(enemy)):
-					var new_position = lerp(world_state_buffer[1]["Enemies"][enemy]["EnemyLocation"], world_state_buffer[2]["Enemies"][enemy]["EnemyLocation"], interpolation_factor)
-					get_node("Enemies/" + str(enemy)).MoveEnemy(new_position)
-					get_node("Enemies/" + str(enemy)).Health(world_state_buffer[1]["Enemies"][enemy]["EnemyHealth"])
+					var new_position = lerp(world_state_buffer[1]["Enemies"][enemy]["L"], world_state_buffer[2]["Enemies"][enemy]["L"], interpolation_factor)
+					var facing = world_state_buffer[1]["Enemies"][enemy]["A"]
+					var attacking = false
+					get_node("Enemies/" + str(enemy)).MoveEnemy(new_position, facing, attacking)
+					get_node("Enemies/" + str(enemy)).Health(world_state_buffer[1]["Enemies"][enemy]["H"])
 				else:
 					SpawnNewEnemy(enemy, world_state_buffer[2]["Enemies"][enemy])
 		elif render_time > world_state_buffer[1]["T"]: #We have no future world state
@@ -91,18 +97,23 @@ func _physics_process(_delta):
 				if get_node("OtherPlayers").has_node(str(player)):
 					var position_delta = (world_state_buffer[1][player]["P"] - world_state_buffer[0][player]["P"])
 					var new_position = world_state_buffer[1][player]["P"] + (position_delta * extrapolation_factor)
-					if world_state_buffer.size() >= 1:
+					if world_state_buffer.size() > 2:
 						var facing = world_state_buffer[2][player]["A"]
 						var mode = world_state_buffer[2][player]["M"]
-						get_node("OtherPlayers/" + str(player)).MovePlayer(new_position, facing, mode)
+						var equipment = world_state_buffer[2][player]["Q"]
+						get_node("OtherPlayers/" + str(player)).MovePlayer(new_position, facing, mode, equipment)
 					
 func SpawnNewEnemy(enemy_id, enemy_dict):
-	var new_enemy = ENEMY_SPAWN.instantiate()
-	new_enemy.position = enemy_dict["EnemyLocation"]
-	new_enemy.max_health = enemy_dict["EnemyMaxHealth"]
-	new_enemy.health = enemy_dict["EnemyHealth"]
-	new_enemy.type = enemy_dict["EnemyType"]
-	new_enemy.state = enemy_dict["EnemyState"]
+	var new_enemy
+	if enemy_dict["T"] == "SK":
+		new_enemy = SKELETON.instantiate()
+	elif enemy_dict["T"] == "RA":
+		new_enemy = RABBIT.instantiate()
+	new_enemy.position = enemy_dict["L"]
+	new_enemy.max_health = enemy_dict["MH"]
+	new_enemy.health = enemy_dict["H"]
+	new_enemy.type = enemy_dict["T"]
+	new_enemy.state = enemy_dict["S"]
 	new_enemy.name = str(enemy_id)
 	get_node("Enemies/").add_child(new_enemy, true)
 
